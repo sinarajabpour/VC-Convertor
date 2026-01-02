@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کریپتو وی‌توری</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#00263e">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2092/2092663.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --primary-dark: #00263e;
+            --accent-orange: #ee7103;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        .container {
+            background-color: var(--bg-color);
+            width: 90%;
+            max-width: 450px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 38, 62, 0.05);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        h2 {
+            color: var(--primary-dark);
+            margin-bottom: 25px;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-family: monospace; /* برای خوانایی بهتر لینک */
+            font-size: 14px;
+            resize: none;
+            box-sizing: border-box;
+            background: #fdfdfd;
+            color: var(--primary-dark);
+            transition: border-color 0.3s;
+            direction: ltr; /* لینک‌ها همیشه چپ‌چین */
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-dark);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Vazirmatn', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-encode {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+
+        .btn-decode {
+            background-color: #f0f2f5;
+            color: var(--primary-dark);
+            border: 1px solid var(--primary-dark);
+        }
+
+        .btn-copy {
+            background-color: var(--accent-orange);
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+            font-weight: 700;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 25px 0;
+        }
+
+        .footer-note {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 20px;
+        }
+        
+        /* حالت مخفی برای پیام کپی */
+        #copyMsg {
+            font-size: 0.8rem;
+            color: var(--accent-orange);
+            height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Visual Conversion Decoder</h2>
+    
+    <div class="input-group">
+        <label for="inputData">لینک یا متن کد شده را وارد کنید:</label>
+        <textarea id="inputData" placeholder="vmess://... یا متن درهم‌ریخته"></textarea>
+    </div>
+
+    <div class="btn-container">
+        <button class="btn-encode" onclick="processText('encode')">🔒 تبدیل به کد</button>
+        <button class="btn-decode" onclick="processText('decode')">🔓 بازگردانی</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="input-group">
+        <label for="outputData">خروجی:</label>
+        <textarea id="outputData" readonly placeholder="نتیجه اینجا نمایش داده می‌شود"></textarea>
+    </div>
+
+    <button class="btn-copy" onclick="copyToClipboard()">کپی نتیجه</button>
+    <div id="copyMsg">کپی شد!</div>
+
+    <div class="footer-note">اجرا به صورت کاملاً آفلاین و امن</div>
+</div>
+
+<script>
+    // دیکشنری حروف اصلی (لینک‌های vmess معمولا شامل این کاراکترها هستند)
+    // شامل حروف کوچک، بزرگ، اعداد و سیمبل‌های رایج در URL
+    const originalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789://+=-_?.&%";
+    
+    // دیکشنری جایگزین (مخلوطی از فارسی و انگلیسی و اعداد بی معنی)
+    // طول این رشته دقیقا باید با originalChars برابر باشد (۷۵ کاراکتر)
+    // سعی شده از حروفی استفاده شود که در SMS مشکلی ایجاد نکنند
+    const cipherChars   = "ضصثقفغعهخحجچپشسیبلاتنمکگظطزرذدئوa1b2c3d4e5f6g7h8i9j0kmnpqrstuwxyzv-+_!?&%";
+
+    function processText(mode) {
+        let input = document.getElementById("inputData").value;
+        let output = "";
+        
+        // تشخیص مسیر تبدیل (انکد یا دیکد)
+        let sourceArr = (mode === 'encode') ? originalChars : cipherChars;
+        let targetArr = (mode === 'encode') ? cipherChars : originalChars;
+
+        for (let i = 0; i < input.length; i++) {
+            let char = input[i];
+            let index = sourceArr.indexOf(char);
+            
+            if (index !== -1) {
+                // اگر کاراکتر در لیست ما بود، جایگزینش کن
+                output += targetArr[index];
+            } else {
+                // اگر کاراکتری خاص بود که در لیست ما نیست، خودش را نگه دار (برای جلوگیری از خرابی)
+                output += char;
+            }
+        }
+        
+        document.getElementById("outputData").value = output;
+    }
+
+    function copyToClipboard() {
+        let copyText = document.getElementById("outputData");
+        if(copyText.value.length === 0) return;
+        
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); // برای موبایل
+        
+        try {
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                showCopyMsg();
+            });
+        } catch (err) {
+            // روش قدیمی اگر navigator کار نکرد
+            document.execCommand("copy");
+            showCopyMsg();
+        }
+    }
+
+    function showCopyMsg() {
+        let msg = document.getElementById("copyMsg");
+        msg.style.opacity = "1";
+        setTimeout(() => { msg.style.opacity = "0"; }, 2000);
+    }
+</script>
+
+</body>
+</html>
